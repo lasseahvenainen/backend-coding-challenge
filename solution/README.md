@@ -20,5 +20,12 @@ Run these commands
 create database expenses
 
 create user 'expenses'@'%' identified by <password> ;
-
+	
 grant all PRIVILEGES  on expenses.* to  'expenses'@'%';
+
+
+To build and deploy this application on Tomcat 
+ run 'mvn clean install' in the directory  <root>/solution/expenses
+ 
+This will create the war-file app.war in <root>/solution/expenses/target
+Copy that file to <TomcatHome>/webapps 

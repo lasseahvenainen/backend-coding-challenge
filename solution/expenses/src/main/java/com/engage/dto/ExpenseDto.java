@@ -12,7 +12,7 @@ import java.util.Date;
 public class ExpenseDto {
 
     private String reason;
-    private Float amount;
+    private String amount;
     //  A String representation of a date , the format used is in the String DATE_FORMAT
     private String date;
     private Float vat;
@@ -22,7 +22,7 @@ public class ExpenseDto {
     public ExpenseDto() {
     }
 
-    public ExpenseDto(String reason, Float amount, String  date, Float vat) {
+    public ExpenseDto(String reason, String amount, String  date, Float vat) {
         this.reason = reason;
         this.amount = amount;
         this.vat = vat;
@@ -49,11 +49,11 @@ public class ExpenseDto {
         this.reason = reason;
     }
 
-    public Float getAmount() {
+    public String getAmount() {
         return amount;
     }
 
-    public void setAmount(Float amount) {
+    public void setAmount(String amount) {
         this.amount = amount;
     }
 

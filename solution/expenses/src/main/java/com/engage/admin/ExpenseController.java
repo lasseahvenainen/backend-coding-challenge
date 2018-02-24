@@ -1,17 +1,16 @@
 package com.engage.admin;
 
+import com.engage.admin.domain.CurrencyConverter;
 import com.engage.admin.domain.Expense;
 import com.engage.admin.domain.ExpenseRepository;
 import com.engage.dto.ExpenseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.*;
@@ -34,7 +33,7 @@ public class ExpenseController {
         ArrayList<Expense> expenseList = (ArrayList<Expense>) expenseRepository.findAll();
 
         for (Expense expense : expenseList) {
-            dtoList.add( new ExpenseDto(expense.getReason(),expense.getAmount(), fromDate(expense.getExpenseDate(),DATE_FORMAT), expense.getVatAmount()));
+            dtoList.add( new ExpenseDto(expense.getReason(),expense.getAmount().toString(), fromDate(expense.getExpenseDate(),DATE_FORMAT), expense.getVatAmount()));
         }
 
         return dtoList;
@@ -47,32 +46,39 @@ public class ExpenseController {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(ExpenseDto.DATE_FORMAT);
         LocalDate localDate = LocalDate.parse(expenseDto.getDate(),formatter);
-        Float vatAmount = expenseDto.getAmount() * VAT_RATE;
-        Expense expense = new Expense(expenseDto.getReason(), expenseDto.getAmount(),localDate, vatAmount );
+
+
+        Float totalAmount = getAmount(expenseDto.getAmount());
+
+        Float vatAmount = totalAmount * VAT_RATE;
+        Expense expense = new Expense(expenseDto.getReason(), totalAmount,localDate, vatAmount );
 
         expense= expenseRepository.save(expense);
 
-        return new ExpenseDto(expense.getReason(),expense.getAmount(),fromDate(expense.getExpenseDate(),DATE_FORMAT), vatAmount);
+        return new ExpenseDto(expense.getReason(),expense.getAmount().toString(),fromDate(expense.getExpenseDate(),DATE_FORMAT), vatAmount);
     }
 
+    private Float  getAmount(String amount) {
 
-    @RequestMapping(value = "/exp" , method = RequestMethod.POST)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public @ResponseBody String  addExpe(@RequestBody ExpenseDto theStuff ) {
+        if (amount.contains("EUR")) {
+            try {
+                Float rawAmount = new Float(amount.replace("EUR",""));
+                Float theAmount = CurrencyConverter.convertCurrency(rawAmount,"EUR", "GBP");
+                // round off
+                theAmount = theAmount * 100;
+                Integer intAmount = theAmount.intValue();
+                Float roundedAmount =  new Float(intAmount) /100;
+                return roundedAmount;
 
-        return theStuff.getReason()+' '+theStuff.getAmount()+ " " + theStuff.getDate();
-    }
-
-    private Date stringToDate(String dateAsString, String format) {
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        try {
-            return sdf.parse(dateAsString);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e.getMessage());
+            }
+        } else {
+            return new Float(amount);
         }
     }
+
 
     private String fromDate(LocalDate localDate , String format) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
